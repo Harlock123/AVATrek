@@ -23,6 +23,9 @@ public partial class GameCanvas : Control
     private DateTime _lastUpdate;
     private bool _wasPausePressed;
     private bool _wasBackPressed;
+    private Point _lastPointer;
+    private bool _hasLastPointer;
+    private bool _spinnerCursorHidden;
 
     public GameCanvas()
     {
@@ -82,6 +85,29 @@ public partial class GameCanvas : Control
                 _engine.Sound.StopAllLoops();
                 _engine.Sound.ClearVoice();
             }
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Avalonia.Input.Key.Tab)
+        {
+            var settings = _engine.Settings;
+            settings.Spinner = !settings.Spinner;
+            settings.Save();
+            _engine.Notify(settings.Spinner ? "MOUSE SPINNER ON" : "MOUSE SPINNER OFF",
+                settings.Spinner ? "Move the mouse left and right to turn" : null);
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key is Avalonia.Input.Key.OemOpenBrackets or Avalonia.Input.Key.OemCloseBrackets)
+        {
+            var settings = _engine.Settings;
+            int step = e.Key == Avalonia.Input.Key.OemCloseBrackets ? 1 : -1;
+            settings.SpinnerSensitivity = Math.Clamp(settings.SpinnerSensitivity + step,
+                Settings.MinSensitivity, Settings.MaxSensitivity);
+            settings.Save();
+            _engine.Notify($"SPINNER SENSITIVITY {settings.SpinnerSensitivity}", null);
             e.Handled = true;
             return;
         }
@@ -155,6 +181,47 @@ public partial class GameCanvas : Control
         e.Handled = true;
     }
 
+    // Spinner mode: only sideways movement counts. The pointer is kept near the middle of the window
+    // (see KeepPointerCentred), so it never runs into a screen edge.
+    protected override void OnPointerMoved(Avalonia.Input.PointerEventArgs e)
+    {
+        var position = e.GetPosition(this);
+        if (_engine.IsSpinnerActive && _hasLastPointer)
+        {
+            double dx = position.X - _lastPointer.X;
+            // A jump this big is the pointer being moved back to the middle, not the player.
+            if (Math.Abs(dx) < Bounds.Width * 0.2)
+                _engine.Input.OnSpinner(dx);
+        }
+        _lastPointer = position;
+        _hasLastPointer = true;
+        KeepPointerCentred(position);
+    }
+
+    private void KeepPointerCentred(Point position)
+    {
+        if (!_engine.IsSpinnerActive || Bounds.Width <= 0) return;
+        var centre = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        if (Math.Abs(position.X - centre.X) < Bounds.Width * 0.2 && Math.Abs(position.Y - centre.Y) < Bounds.Height * 0.2)
+            return;
+
+        var screen = this.PointToScreen(centre);
+        double scaling = TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
+        if (MouseWarp.MoveTo(screen.X, screen.Y, scaling))
+            _lastPointer = centre;
+    }
+
+    // The pointer disappears while the spinner is working, and comes back for menus and pauses.
+    private void UpdateSpinnerCursor()
+    {
+        bool active = _engine.IsSpinnerActive;
+        if (active == _spinnerCursorHidden) return;
+        _spinnerCursorHidden = active;
+        Cursor = active ? new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.None) : null;
+        if (active)
+            KeepPointerCentred(new Point(-1, -1));
+    }
+
     protected override void OnPointerWheelChanged(Avalonia.Input.PointerWheelEventArgs e)
     {
         _engine.Input.OnMouseWheel(e.Delta.Y);
@@ -192,6 +259,7 @@ public partial class GameCanvas : Control
         HandleControllerPause();
 
         _engine.Update(deltaTime);
+        UpdateSpinnerCursor();
         UpdateViewer(deltaTime);
         _engine.Input.PostUpdate();
         InvalidateVisual();

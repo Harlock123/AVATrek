@@ -19,6 +19,7 @@ public class InputHandler : IDisposable
     private bool _rightMousePressed;
     private bool _middleMousePressed;
     private double _mouseWheelDelta;
+    private double _spinnerDelta;
 
     public void OnKeyDown(Key key)
     {
@@ -60,6 +61,12 @@ public class InputHandler : IDisposable
         _mouseWheelDelta += delta;
     }
 
+    /// <summary>Sideways mouse movement, in pixels, for spinner mode.</summary>
+    public void OnSpinner(double dx)
+    {
+        _spinnerDelta += dx;
+    }
+
     public void Update()
     {
         _controller.Update();
@@ -69,11 +76,13 @@ public class InputHandler : IDisposable
     {
         // Reset mouse wheel delta after each frame
         _mouseWheelDelta = 0;
+        _spinnerDelta = 0;
     }
 
     public bool IsLeftMousePressed => _leftMousePressed;
     public bool IsRightMousePressed => _rightMousePressed;
     public double MouseWheelDelta => _mouseWheelDelta;
+    public double SpinnerDelta => _spinnerDelta;
 
     public bool IsControllerConnected => _controller.IsConnected;
 

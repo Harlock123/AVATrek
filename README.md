@@ -31,6 +31,8 @@ at a starbase, and every starbase you don't need is worth a bonus.
 - **Attract mode**: leave the title screen alone for 20 seconds and a computer captain plays a silent
   demonstration.
 - **Top-ten high-score table** with arcade-style initials entry (keyboard, gamepad or mouse).
+- **Mouse spinner mode**: press **Tab** and sliding the mouse left and right turns the ship, like the
+  cabinet's weighted dial, with the pointer hidden and kept in the window so it never runs out of room.
 - **Keyboard, mouse and gamepad** (Xbox, PlayStation, Switch Pro and other SDL2 controllers,
   hot-plugged).
 - **Any window size**: the 4:3 screen scales to fit, letterboxed. **Ctrl+S** saves a screenshot.
@@ -124,6 +126,8 @@ photon torpedoes.
 | **Esc** | Pause (Esc again to quit) |
 | **M** | Mute all sound |
 | **V** | Voice reports on/off |
+| **Tab** | Mouse spinner mode on/off |
+| **[** / **]** | Spinner sensitivity down / up (1–10) |
 
 ### Entering initials
 
@@ -144,7 +148,21 @@ Gamepad: D-pad dials and moves, **X** accepts, **Start** finishes. Mouse: the wh
 | **Left Button** | Phasers |
 | **Right Button** | Impulse |
 | **Middle Button** | Photon torpedo |
-| **Scroll Wheel** | Turn (like the spinner) |
+| **Scroll Wheel** | Turn |
+| **Move left / right** | Turn, in spinner mode |
+
+#### Spinner mode
+
+Press **Tab** to switch the mouse into spinner mode, the closest thing to the cabinet's weighted dial:
+slide the mouse left and right to turn the ship, smoothly and as far as you like, while the buttons
+still fire phasers, impulse and torpedoes. During play the pointer is hidden and kept near the middle
+of the window, so it never stops at a screen edge; it comes back on the title screen and when
+paused. **[** and **]** set the sensitivity from 1 to 10. Spinner mode and its sensitivity are
+remembered between games, and the title screen shows which is set.
+
+Keeping the pointer in the window uses `SetCursorPos` on Windows, `CGWarpMouseCursorPosition` on
+macOS and `XWarpPointer` on Linux under X11 or XWayland. On a desktop that doesn't allow programs to
+move the pointer, spinner mode still works, but the pointer can reach the edge of the screen.
 
 ### Controller (Xbox/PlayStation/Switch Pro)
 
@@ -278,6 +296,8 @@ AVATREK/
 │   ├── HighScoreTable.cs    # Top-ten table, saved between games
 │   ├── InitialsEntry.cs     # Arcade-style initials entry
 │   ├── InputHandler.cs      # Keyboard, mouse and gamepad state
+│   ├── MouseWarp.cs         # Moves the pointer back to the middle for spinner mode
+│   ├── Settings.cs          # Spinner mode and sensitivity, saved between games
 │   ├── ControllerManager.cs # SDL2 gamepad support
 │   └── SoundManager.cs      # Effects, looping engine sounds, the voice queue
 ├── Models/
@@ -316,6 +336,7 @@ AVATREK/
 - **Game Loop**: 60 FPS using `DispatcherTimer`
 - **High scores**: saved to `AVATrek/highscores.txt` in the user's application-data folder
   (`~/.config` on Linux, `%APPDATA%` on Windows, `~/Library/Application Support` on macOS)
+- **Settings**: spinner mode and sensitivity in `AVATrek/settings.txt`, next to the high scores
 - **Screenshots**: Captured using `RenderTargetBitmap` and saved as PNG
 
 ## Roadmap
@@ -328,11 +349,11 @@ AVATREK/
 - Six-round sectors with Klingons, anti-matter saucers, Nomad and his mines, rising to sector ten
 - Synthesised effects, looping engine and bridge sounds, and speech-chip voice reports
 - Attract mode, top-ten high scores with initials, screenshots, mute and voice toggles
+- Mouse spinner mode with adjustable sensitivity, remembered between games
 - Self-contained single-file releases for 8 platforms on every push to `main`
 
 ### Planned
 
-- A spinner mode for the mouse (turn by moving it, like the cabinet's dial)
 - Optional tuning settings (starting ships, enemy speed)
 - Two-player alternating games
 

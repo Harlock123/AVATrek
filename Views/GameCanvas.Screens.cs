@@ -68,7 +68,8 @@ public partial class GameCanvas
         for (int i = 0; i < _engine.Starbases.Count; i++)
             DrawModelTopDown(context, Wireframe.Starbase, new Point(right - 14 - i * 34, 270), Clock * 0.4, 12, GameEngine.StarbaseColor, 0.8, 1);
 
-        var flags = (_engine.Sound.IsMuted ? "MUTED " : "") + (!_engine.Sound.IsVoiceOn ? "VOICE OFF" : "");
+        var flags = (_engine.Settings.Spinner ? "SPINNER " : "") + (_engine.Sound.IsMuted ? "MUTED " : "") +
+                    (!_engine.Sound.IsVoiceOn ? "VOICE OFF" : "");
         if (flags.Length > 0)
             DrawRightText(context, flags.Trim(), 11, right, 232, TextColor);
 
@@ -292,6 +293,7 @@ public partial class GameCanvas
             ("SHIFT or E", "Warp"),
             ("Mouse", "Left phasers, right impulse,"),
             ("", "middle torpedo, wheel turns"),
+            ("TAB   [  ]", "Mouse spinner, sensitivity"),
             ("ESC  M  V", "Pause, mute, voice")
         };
         string[] orders =
@@ -303,13 +305,15 @@ public partial class GameCanvas
             "but every starbase left unused at the",
             "end of a sector earns a bonus.",
             "Saucers latch on and drain the shields:",
-            "go to warp to shake them off."
+            "go to warp to shake them off.",
+            ""
         };
         for (int i = 0; i < controls.Length; i++)
         {
-            context.DrawText(Text(controls[i].Keys, 14, Colors.White), new Point(48, 512 + i * 20));
-            context.DrawText(Text(controls[i].Action, 14, TextColor), new Point(230, 512 + i * 20));
-            context.DrawText(Text(orders[i], 14, TextColor), new Point(580, 512 + i * 20));
+            double y = 504 + i * 19;
+            context.DrawText(Text(controls[i].Keys, 14, Colors.White), new Point(48, y));
+            context.DrawText(Text(controls[i].Action, 14, TextColor), new Point(230, y));
+            context.DrawText(Text(orders[i], 14, TextColor), new Point(580, y));
         }
 
         var best = _engine.Table.Entries.Count > 0 ? _engine.Table.Entries[0] : null;
@@ -317,6 +321,10 @@ public partial class GameCanvas
 
         if (Blink(2))
             DrawCentredText(context, "Press SPACE or X to start", 26, 718, Colors.White);
+
+        var settings = _engine.Settings;
+        DrawRightText(context, settings.Spinner ? $"MOUSE SPINNER ON  ·  SENSITIVITY {settings.SpinnerSensitivity}" : "MOUSE SPINNER OFF",
+            12, ScreenWidth - 14, 748, settings.Spinner ? Gold : TextColor);
     }
 
     // ----- High scores -----

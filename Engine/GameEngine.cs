@@ -103,6 +103,10 @@ public class GameEngine : IDisposable
     public double Clock { get; private set; }
 
     public InputHandler Input { get; } = new();
+    public Settings Settings { get; } = Settings.Load();
+
+    /// <summary>The mouse is working the spinner: the pointer is hidden and kept in the window.</summary>
+    public bool IsSpinnerActive => Settings.Spinner && State == GameState.Playing;
     public SoundManager Sound { get; } = new();
 
     private int _klingonsToCome, _saucersToCome;
@@ -510,6 +514,9 @@ public class GameEngine : IDisposable
         return best;
     }
 
+    /// <summary>A short notice on the viewer, such as a setting being changed.</summary>
+    public void Notify(string message, string? sub, double time = 1.6) => ShowMessage(message, sub, time);
+
     private void ShowMessage(string message, string? sub, double time)
     {
         Message = message;
@@ -724,6 +731,8 @@ public class GameEngine : IDisposable
         if (controls.TurnRight) Ship.Turn(1, deltaTime);
         if (State == GameState.Playing && Input.MouseWheelDelta != 0)
             Ship.Rotation += Input.MouseWheelDelta * 0.25;
+        if (IsSpinnerActive)
+            Ship.Rotation += Input.SpinnerDelta * Settings.RadiansPerPixel;
 
         bool warping = Ship.Fly(controls.Impulse, controls.Warp, deltaTime);
 
